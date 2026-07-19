@@ -358,7 +358,7 @@
 
 #         st.write(
 #             f"{label} : {prob*100:.2f}%"
-#         )# app.py
+#         )# app.py# app.py
 import streamlit as st
 from tensorflow.keras.preprocessing import image
 import tensorflow as tf
@@ -374,6 +374,9 @@ st.markdown("""
 html, body, .stApp {
     background: linear-gradient(135deg, #d0f0c0, #a8d5ba); /* हलका forest green gradient */
     height: 100%;
+}
+.stSidebar {
+    background: linear-gradient(135deg, #e0f5d0, #c8e6c9); /* sidebar ला हलका forest green */
 }
 .main-title {
     text-align:center;
@@ -492,6 +495,7 @@ if uploaded:
         eng = display_names.get(lab, "")
         st.write(f"{lab} ({eng}) : {prob*100:.2f}%")
         st.progress(float(prob))
+
 
 
 
