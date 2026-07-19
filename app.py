@@ -359,7 +359,6 @@
 #         st.write(
 #             f"{label} : {prob*100:.2f}%"
 #         )
-
 import streamlit as st
 from tensorflow.keras.preprocessing import image
 import tensorflow as tf
@@ -377,7 +376,7 @@ st.set_page_config(
 )
 
 
-# ---------------- CUSTOM CSS ----------------
+# ---------------- CSS ----------------
 
 st.markdown("""
 <style>
@@ -396,45 +395,22 @@ st.markdown("""
     margin-bottom:30px;
 }
 
-
-.card {
-    background:white;
-    padding:25px;
-    border-radius:20px;
-    box-shadow:0px 5px 20px rgba(0,0,0,0.12);
-    margin-bottom:20px;
-}
-
-
 .result-box {
-
     background:linear-gradient(135deg,#84fab0,#8fd3f4);
     padding:25px;
     border-radius:20px;
     text-align:center;
     font-size:25px;
     font-weight:bold;
-
 }
 
-
 .sidebar-title {
-
     font-size:28px;
     font-weight:bold;
     color:#1f4e79;
-
-}
-
-
-.stButton button {
-
-    border-radius:20px;
-
 }
 
 </style>
-
 """, unsafe_allow_html=True)
 
 
@@ -462,10 +438,9 @@ interpreter, input_details, output_details = load_tflite_model()
 
 
 
-# ---------------- CLASS LABELS ----------------
+# ---------------- MODEL LABELS (same as training) ----------------
 
-class_labels = [
-
+all_labels = [
     'cane',
     'cavallo',
     'elefante',
@@ -476,27 +451,34 @@ class_labels = [
     'pecora',
     'ragno',
     'scoiattolo'
+]
 
+
+# Hide these from app
+
+remove_classes = [
+    'gatto',
+    'mucca'
+]
+
+
+# Labels shown in UI
+
+display_labels = [
+    label for label in all_labels
+    if label not in remove_classes
 ]
 
 
 
 # ---------------- SIDEBAR ----------------
 
-
 with st.sidebar:
 
-
     st.markdown(
-
         "<div class='sidebar-title'>🐾 Animal AI</div>",
-
         unsafe_allow_html=True
-
     )
-
-
-    st.write("")
 
 
     if os.path.exists("animal_logo.png"):
@@ -512,7 +494,6 @@ with st.sidebar:
 
     st.subheader("📌 About Project")
 
-
     st.write(
         """
         🤖 CNN Based Animal Species Classification
@@ -521,8 +502,8 @@ with st.sidebar:
 
         ✔ Deep Learning  
         ✔ TensorFlow Lite  
-        ✔ Streamlit  
-        ✔ Computer Vision
+        ✔ Computer Vision  
+        ✔ Streamlit
         """
     )
 
@@ -533,7 +514,7 @@ with st.sidebar:
     st.subheader("🐾 Supported Animals")
 
 
-    for animal in class_labels:
+    for animal in display_labels:
 
         st.write("•", animal)
 
@@ -541,58 +522,27 @@ with st.sidebar:
 
 # ---------------- MAIN UI ----------------
 
-
 st.markdown(
-
     "<div class='main-title'>🐾 Animal Species Classification</div>",
-
     unsafe_allow_html=True
-
 )
 
 
 st.markdown(
-
-    "<div class='subtitle'>AI powered CNN model to identify animal species from images</div>",
-
+    "<div class='subtitle'>AI powered CNN model to identify animal species</div>",
     unsafe_allow_html=True
-
 )
 
-
-
-# Upload Card
-
-st.markdown(
-
-    "<div class='card'>",
-
-    unsafe_allow_html=True
-
-)
 
 
 uploaded_file = st.file_uploader(
-
     "📸 Upload Animal Image",
-
     type=["jpg","jpeg","png"]
-
-)
-
-
-st.markdown(
-
-    "</div>",
-
-    unsafe_allow_html=True
-
 )
 
 
 
 # ---------------- PREDICTION ----------------
-
 
 if uploaded_file is not None:
 
@@ -603,36 +553,26 @@ if uploaded_file is not None:
     col1, col2 = st.columns(2)
 
 
-
     with col1:
 
         st.image(
-
             img,
-
             caption="Uploaded Image",
-
             use_container_width=True
-
         )
-
 
 
     # Model input size
 
     input_shape = input_details[0]['shape']
 
-
     height = input_shape[1]
 
     width = input_shape[2]
 
 
-
     img = img.resize(
-
         (width,height)
-
     )
 
 
@@ -640,73 +580,47 @@ if uploaded_file is not None:
 
 
     img_array = np.expand_dims(
-
         img_array,
-
         axis=0
-
     )
 
 
 
-    input_type = input_details[0]['dtype']
+    # Input preprocessing
 
+    if input_details[0]['dtype'] == np.float32:
 
-
-    if input_type == np.float32:
-
-
-        img_array = img_array.astype(
-
-            np.float32
-
-        )
-
+        img_array = img_array.astype(np.float32)
 
         img_array = img_array / 255.0
 
 
-
     else:
 
-
-        img_array = img_array.astype(
-
-            np.uint8
-
-        )
-
+        img_array = img_array.astype(np.uint8)
 
 
 
     # Prediction
 
-
     interpreter.set_tensor(
-
         input_details[0]['index'],
-
         img_array
-
     )
 
 
     interpreter.invoke()
 
 
-
     prediction = interpreter.get_tensor(
-
         output_details[0]['index']
-
     )
-
 
 
     predicted_index = np.argmax(prediction)
 
 
-    predicted_animal = class_labels[predicted_index]
+    predicted_animal = all_labels[predicted_index]
 
 
     confidence = np.max(prediction)
@@ -715,74 +629,59 @@ if uploaded_file is not None:
 
     with col2:
 
-
         st.subheader("🔍 Prediction Result")
 
 
-        if confidence < 0.50:
-
+        if predicted_animal in remove_classes:
 
             st.warning(
+                "⚠️ This class is not available in this application."
+            )
 
-                "⚠️ Image not recognized clearly"
 
+        elif confidence < 0.50:
+
+            st.warning(
+                "⚠️ Image not recognized clearly."
             )
 
 
         else:
 
-
             st.markdown(
+                f"""
+                <div class="result-box">
 
-            f"""
+                🐾 {predicted_animal}
 
-            <div class="result-box">
+                <br><br>
 
-            🐾 {predicted_animal}
+                🎯 Confidence:
+                {confidence*100:.2f}%
 
-            <br><br>
-
-            🎯 Confidence:
-
-            {confidence*100:.2f}%
-
-            </div>
-
-            """,
-
-            unsafe_allow_html=True
-
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
 
 
-    st.write("")
+    # ---------------- PROBABILITY ----------------
 
 
-    st.subheader("📊 Class Probabilities")
+    st.subheader("📊 Prediction Probabilities")
 
 
     for label, prob in zip(
-
-        class_labels,
-
+        all_labels,
         prediction[0]
-
     ):
 
+        if label not in remove_classes:
 
-        st.progress(
-
-            float(prob)
-
-        )
-
-
-        st.write(
-
-            f"{label} : {prob*100:.2f}%"
-
-        )
+            st.write(
+                f"{label} : {prob*100:.2f}%"
+            )
 
 
 
