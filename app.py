@@ -360,24 +360,86 @@
 #             f"{label} : {prob*100:.2f}%"
 #         )
 
-
-
 import streamlit as st
 from tensorflow.keras.preprocessing import image
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import os
 
 
 # ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
-    page_title="Animal Species Classification",
-    page_icon="🐾"
+    page_title="Animal AI Classifier",
+    page_icon="🐾",
+    layout="wide"
 )
 
 
-# ---------------- LOAD TFLITE MODEL ----------------
+# ---------------- CUSTOM CSS ----------------
+
+st.markdown("""
+<style>
+
+.main-title {
+    font-size:45px;
+    font-weight:800;
+    text-align:center;
+    color:#1f4e79;
+}
+
+.subtitle {
+    text-align:center;
+    font-size:20px;
+    color:#555;
+    margin-bottom:30px;
+}
+
+
+.card {
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0px 5px 20px rgba(0,0,0,0.12);
+    margin-bottom:20px;
+}
+
+
+.result-box {
+
+    background:linear-gradient(135deg,#84fab0,#8fd3f4);
+    padding:25px;
+    border-radius:20px;
+    text-align:center;
+    font-size:25px;
+    font-weight:bold;
+
+}
+
+
+.sidebar-title {
+
+    font-size:28px;
+    font-weight:bold;
+    color:#1f4e79;
+
+}
+
+
+.stButton button {
+
+    border-radius:20px;
+
+}
+
+</style>
+
+""", unsafe_allow_html=True)
+
+
+
+# ---------------- LOAD MODEL ----------------
 
 @st.cache_resource
 def load_tflite_model():
@@ -389,9 +451,11 @@ def load_tflite_model():
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
+
     output_details = interpreter.get_output_details()
 
     return interpreter, input_details, output_details
+
 
 
 interpreter, input_details, output_details = load_tflite_model()
@@ -401,6 +465,7 @@ interpreter, input_details, output_details = load_tflite_model()
 # ---------------- CLASS LABELS ----------------
 
 class_labels = [
+
     'cane',
     'cavallo',
     'elefante',
@@ -411,27 +476,123 @@ class_labels = [
     'pecora',
     'ragno',
     'scoiattolo'
+
 ]
 
 
 
-# ---------------- UI ----------------
+# ---------------- SIDEBAR ----------------
 
-st.title("🐾 Animal Species Classification")
 
-st.write(
-    "Upload an animal image and CNN model will predict the species."
+with st.sidebar:
+
+
+    st.markdown(
+
+        "<div class='sidebar-title'>🐾 Animal AI</div>",
+
+        unsafe_allow_html=True
+
+    )
+
+
+    st.write("")
+
+
+    if os.path.exists("animal_logo.png"):
+
+        st.image(
+            "animal_logo.png",
+            use_container_width=True
+        )
+
+
+    st.write("---")
+
+
+    st.subheader("📌 About Project")
+
+
+    st.write(
+        """
+        🤖 CNN Based Animal Species Classification
+
+        Technologies:
+
+        ✔ Deep Learning  
+        ✔ TensorFlow Lite  
+        ✔ Streamlit  
+        ✔ Computer Vision
+        """
+    )
+
+
+    st.write("---")
+
+
+    st.subheader("🐾 Supported Animals")
+
+
+    for animal in class_labels:
+
+        st.write("•", animal)
+
+
+
+# ---------------- MAIN UI ----------------
+
+
+st.markdown(
+
+    "<div class='main-title'>🐾 Animal Species Classification</div>",
+
+    unsafe_allow_html=True
+
+)
+
+
+st.markdown(
+
+    "<div class='subtitle'>AI powered CNN model to identify animal species from images</div>",
+
+    unsafe_allow_html=True
+
+)
+
+
+
+# Upload Card
+
+st.markdown(
+
+    "<div class='card'>",
+
+    unsafe_allow_html=True
+
 )
 
 
 uploaded_file = st.file_uploader(
-    "Choose an image",
-    type=["jpg", "jpeg", "png"]
+
+    "📸 Upload Animal Image",
+
+    type=["jpg","jpeg","png"]
+
+)
+
+
+st.markdown(
+
+    "</div>",
+
+    unsafe_allow_html=True
+
 )
 
 
 
 # ---------------- PREDICTION ----------------
+
 
 if uploaded_file is not None:
 
@@ -439,23 +600,39 @@ if uploaded_file is not None:
     img = Image.open(uploaded_file).convert("RGB")
 
 
-    st.image(
-        img,
-        caption="Uploaded Image",
-        use_container_width=True
-    )
+    col1, col2 = st.columns(2)
 
 
-    # Get model input size automatically
+
+    with col1:
+
+        st.image(
+
+            img,
+
+            caption="Uploaded Image",
+
+            use_container_width=True
+
+        )
+
+
+
+    # Model input size
 
     input_shape = input_details[0]['shape']
 
+
     height = input_shape[1]
+
     width = input_shape[2]
 
 
+
     img = img.resize(
-        (width, height)
+
+        (width,height)
+
     )
 
 
@@ -463,102 +640,148 @@ if uploaded_file is not None:
 
 
     img_array = np.expand_dims(
+
         img_array,
+
         axis=0
+
     )
 
 
 
-    # -------- HANDLE INPUT TYPE --------
-
     input_type = input_details[0]['dtype']
+
 
 
     if input_type == np.float32:
 
+
         img_array = img_array.astype(
+
             np.float32
+
         )
+
 
         img_array = img_array / 255.0
 
 
+
     else:
 
+
         img_array = img_array.astype(
+
             np.uint8
+
         )
 
 
 
-    # -------- MODEL PREDICTION --------
+
+    # Prediction
+
 
     interpreter.set_tensor(
+
         input_details[0]['index'],
+
         img_array
+
     )
 
 
     interpreter.invoke()
 
 
+
     prediction = interpreter.get_tensor(
+
         output_details[0]['index']
+
     )
 
 
 
-    predicted_index = np.argmax(
-        prediction
-    )
+    predicted_index = np.argmax(prediction)
 
 
-    predicted_animal = class_labels[
-        predicted_index
-    ]
+    predicted_animal = class_labels[predicted_index]
 
 
-    confidence = np.max(
-        prediction
-    )
+    confidence = np.max(prediction)
 
 
 
-    # -------- RESULT --------
+    with col2:
 
 
-    if confidence < 0.50:
-
-        st.warning(
-            "⚠️ Image not recognized clearly. Please upload another image."
-        )
-
-    else:
-
-        st.success(
-            f"🐾 Predicted Animal: {predicted_animal}"
-        )
-
-        st.info(
-            f"Confidence: {confidence*100:.2f}%"
-        )
+        st.subheader("🔍 Prediction Result")
 
 
+        if confidence < 0.50:
 
-    # -------- PROBABILITIES --------
 
-    st.subheader(
-        "Prediction Probabilities"
-    )
+            st.warning(
+
+                "⚠️ Image not recognized clearly"
+
+            )
+
+
+        else:
+
+
+            st.markdown(
+
+            f"""
+
+            <div class="result-box">
+
+            🐾 {predicted_animal}
+
+            <br><br>
+
+            🎯 Confidence:
+
+            {confidence*100:.2f}%
+
+            </div>
+
+            """,
+
+            unsafe_allow_html=True
+
+            )
+
+
+
+    st.write("")
+
+
+    st.subheader("📊 Class Probabilities")
 
 
     for label, prob in zip(
+
         class_labels,
+
         prediction[0]
+
     ):
 
+
+        st.progress(
+
+            float(prob)
+
+        )
+
+
         st.write(
+
             f"{label} : {prob*100:.2f}%"
+
         )
 
 
