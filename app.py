@@ -359,6 +359,7 @@
 #         st.write(
 #             f"{label} : {prob*100:.2f}%"
 #         )# app.py# app.py
+# app.py
 import streamlit as st
 from tensorflow.keras.preprocessing import image
 import tensorflow as tf
@@ -372,11 +373,11 @@ st.set_page_config(page_title="Animal AI Classifier", page_icon="🐾", layout="
 st.markdown("""
 <style>
 html, body, .stApp {
-    background: linear-gradient(135deg, #d0f0c0, #a8d5ba); /* हलका forest green gradient */
+    background: linear-gradient(135deg, #d0f0c0, #a8d5ba);
     height: 100%;
 }
 .stSidebar {
-    background: linear-gradient(135deg, #e0f5d0, #c8e6c9); /* sidebar ला हलका forest green */
+    background: linear-gradient(135deg, #e0f5d0, #c8e6c9);
 }
 .main-title {
     text-align:center;
@@ -422,13 +423,15 @@ display_names = {
     "elefante":"🐘 Elephant",
     "farfalla":"🦋 Butterfly",
     "gallina":"🐔 Chicken",
+    "gatto":"🐱 Cat",
+    "mucca":"🐄 Cow",
     "pecora":"🐑 Sheep",
     "ragno":"🕷️ Spider",
     "scoiattolo":"🐿️ Squirrel"
 }
 
-# Hide classes
-hide = {"gatto","mucca"}
+# Hide classes (Cat, Cow, Sheep, Spider, Squirrel)
+hide = {"gatto","mucca","pecora","ragno","scoiattolo"}
 
 # Sidebar
 with st.sidebar:
@@ -439,7 +442,7 @@ with st.sidebar:
     st.divider()
     st.subheader("Supported Animals")
 
-    # Loop through all_labels and show English names if available
+    # Show only non-hidden animals
     for lab in all_labels:
         if lab not in hide:
             eng = display_names.get(lab, "")
@@ -495,7 +498,6 @@ if uploaded:
         eng = display_names.get(lab, "")
         st.write(f"{lab} ({eng}) : {prob*100:.2f}%")
         st.progress(float(prob))
-
 
 
 
