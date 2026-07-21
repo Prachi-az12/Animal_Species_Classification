@@ -369,21 +369,37 @@ import os
 
 st.set_page_config(page_title="Animal AI Classifier", page_icon="🐾", layout="wide")
 
-# Custom CSS for forest-type light background
+# 🌿 Custom CSS for attractive UI
 st.markdown("""
 <style>
 html, body, .stApp {
     background: linear-gradient(135deg, #d0f0c0, #a8d5ba);
     height: 100%;
+    font-family: 'Segoe UI', sans-serif;
 }
+
+/* Sidebar */
 .stSidebar {
     background: linear-gradient(135deg, #e0f5d0, #c8e6c9);
+    padding: 10px;
 }
+.stSidebar p:hover {
+    background: #b2dfdb;
+    border-radius: 8px;
+    padding: 5px;
+    transition: 0.3s;
+}
+
+/* Titles */
 .main-title {
     text-align:center;
     font-size:42px;
     font-weight:bold;
     color:#1f4e79;
+    background: linear-gradient(90deg, #43cea2, #185a9d);
+    padding: 15px;
+    border-radius: 12px;
+    color: white;
 }
 .subtitle {
     text-align:center;
@@ -391,6 +407,8 @@ html, body, .stApp {
     font-size:18px;
     margin-bottom:20px;
 }
+
+/* Result card */
 .result {
     background:linear-gradient(135deg,#84fab0,#8fd3f4);
     padding:20px;
@@ -398,10 +416,28 @@ html, body, .stApp {
     text-align:center;
     font-size:24px;
     font-weight:bold;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Prediction card */
+.pred-card {
+    background: linear-gradient(135deg, #fdfbfb, #ebedee);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 12px;
+    box-shadow: 2px 4px 8px rgba(0,0,0,0.1);
+    font-size: 18px;
+}
+
+/* Uploaded image styling */
+.stImage img {
+    border-radius: 15px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
 }
 </style>
 """, unsafe_allow_html=True)
 
+# Load model
 @st.cache_resource
 def load_model():
     interpreter = tf.lite.Interpreter(model_path="mask_final_quant.tflite")
@@ -410,13 +446,12 @@ def load_model():
 
 interpreter, input_details, output_details = load_model()
 
-# Original model labels
+# Labels
 all_labels = [
     "cane","cavallo","elefante","farfalla",
     "gallina","gatto","mucca","pecora","ragno","scoiattolo"
 ]
 
-# English names for UI
 display_names = {
     "cane":"🐶 Dog",
     "cavallo":"🐎 Horse",
@@ -430,7 +465,7 @@ display_names = {
     "scoiattolo":"🐿️ Squirrel"
 }
 
-# Hide classes (Cat, Cow, Sheep, Spider, Squirrel)
+# Hide classes
 hide = {"gatto","mucca","pecora","ragno","scoiattolo"}
 
 # Sidebar
@@ -441,8 +476,6 @@ with st.sidebar:
         st.image("animal_logo.png", use_container_width=True)
     st.divider()
     st.subheader("Supported Animals")
-
-    # Show only non-hidden animals
     for lab in all_labels:
         if lab not in hide:
             eng = display_names.get(lab, "")
@@ -496,8 +529,13 @@ if uploaded:
         if lab in hide:
             continue
         eng = display_names.get(lab, "")
-        st.write(f"{lab} ({eng}) : {prob*100:.2f}%")
+        st.markdown(f"""
+        <div class="pred-card">
+        {lab} ({eng}) : {prob*100:.2f}%
+        </div>
+        """, unsafe_allow_html=True)
         st.progress(float(prob))
+
 
 
 
